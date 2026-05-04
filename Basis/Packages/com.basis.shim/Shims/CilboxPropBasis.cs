@@ -82,6 +82,7 @@ namespace Cilbox
 			"System.KeyValuePair`2",
 			"System.Long",
 			"System.ULong",
+			"System.URI",
 			"System.Math",
 			"System.MathF",
 			"System.Nullable`1",
