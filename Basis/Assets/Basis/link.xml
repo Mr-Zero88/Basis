@@ -1,6 +1,5 @@
 <linker>
 
-    <assembly fullname="Assembly-CSharp" preserve="all" />
     <assembly fullname="AudioLink" preserve="all" />
     <assembly fullname="BakeryEditorAssembly" preserve="all" />
     <assembly fullname="BakeryRuntimeAssembly" preserve="all" />

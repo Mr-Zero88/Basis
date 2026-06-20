@@ -17,7 +17,7 @@
 #include "./VolumetricShadows.hlsl"
 #include "./ProjectionUtils.hlsl"
 
-// Comment out a define below to compile out that integration if its package is removed from the project.
+// Comment out a define below to compile out that integration if its package is removed.
 #define VF_LTCGI
 #define VF_VRSL
 
@@ -178,16 +178,22 @@ float3 GetStepAdditionalLightsColor(float2 uv, float3 currPosWS, float3 rd, floa
                 
     // Loop differently through lights in Forward+ while considering Forward and Deferred too.
     LIGHT_LOOP_BEGIN(_CustomAdditionalLightsCount)
+        // Read the per-light fog params once through a clamped index. Indexing these uniform arrays
+        // with the raw loop index makes FXC mis-track the relative index in the Forward+ build
+        // variants -> error X8000 "relative index temp register uninitialized" (issue #25).
+        uint fogIndex = min(lightIndex, (uint)(MAX_VISIBLE_LIGHTS - 1));
+        float fogScattering = _Scatterings[fogIndex];
+        float fogRadiusSq = _RadiiSq[fogIndex];
+        float fogAnisotropy = _Anisotropies[fogIndex];
+
         UNITY_BRANCH
-        if (_Scatterings[lightIndex] <= 0.0)
+        if (fogScattering <= 0.0)
             continue;
 
         Light additionalLight = GetAdditionalPerObjectLight(lightIndex, currPosWS);
-#if defined(_CLUSTER_LIGHT_LOOP)
+        // Fog never samples additional-light shadows (the _ADDITIONAL_LIGHT_SHADOWS variant is not
+        // compiled - it overflows FXC under _CLUSTER_LIGHT_LOOP, issue #25). Lights stay unshadowed.
         additionalLight.shadowAttenuation = 1.0;
-#else
-        additionalLight.shadowAttenuation = VolumetricAdditionalLightRealtimeShadow(lightIndex, currPosWS, additionalLight.direction);
-#endif
 #if _LIGHT_COOKIES
         additionalLight.color *= SampleAdditionalLightCookie(lightIndex, currPosWS);
 #endif
@@ -201,15 +207,15 @@ float3 GetStepAdditionalLightsColor(float2 uv, float3 currPosWS, float3 rd, floa
         // Gradually reduce additional lights scattering to zero at their origin to try to avoid flicker-aliasing.
         float3 distToPos = additionalLightPos.xyz - currPosWS;
         float distToPosMagnitudeSq = dot(distToPos, distToPos);
-        float newScattering = smoothstep(0.0, _RadiiSq[lightIndex], distToPosMagnitudeSq) ;
+        float newScattering = smoothstep(0.0, fogRadiusSq, distToPosMagnitudeSq) ;
         newScattering *= newScattering;
-        newScattering *= _Scatterings[lightIndex];
+        newScattering *= fogScattering;
 
         // If directional lights are also considered as additional lights when more than 1 is used, ignore the previous code when it is a directional light.
         // They store direction in additionalLightPos.xyz and have .w set to 0, while point and spotlights have it set to 1.
         // newScattering = lerp(1.0, newScattering, additionalLightPos.w);
     
-        float phase = CornetteShanksPhaseFunction(_Anisotropies[lightIndex], dot(rd, additionalLight.direction));
+        float phase = CornetteShanksPhaseFunction(fogAnisotropy, dot(rd, additionalLight.direction));
         additionalLightsColor += (additionalLight.color * (additionalLight.shadowAttenuation * additionalLight.distanceAttenuation * phase * density * newScattering));
     LIGHT_LOOP_END
 
@@ -352,12 +358,11 @@ float4 VolumetricFog(float2 uv, float2 positionCS)
 
         float3 apvColor = GetStepAdaptiveProbeVolumeEvaluation(uv, currPosWS, density);
         float3 mainLightColor = GetStepMainLightColor(currPosWS, phaseMainLight, density);
-        float3 additionalLightsColor = GetStepAdditionalLightsColor(uv, currPosWS, rd, density);
         float3 ltcgiColor = GetStepLTCGIColor(currPosWS, -rd, density);
         float3 vrslColor = GetStepVRSLColor(currPosWS, -rd, density);
         
         // TODO: Additional contributions? Reflection probes, etc...
-        float3 stepColor = apvColor + mainLightColor + additionalLightsColor + ltcgiColor + vrslColor;
+        float3 stepColor = apvColor + mainLightColor + ltcgiColor + vrslColor;
         volumetricFogColor += (stepColor * (transmittance * stepLength));
         
         // TODO: Break out when transmittance reaches low threshold and remap the transmittance when doing so.
