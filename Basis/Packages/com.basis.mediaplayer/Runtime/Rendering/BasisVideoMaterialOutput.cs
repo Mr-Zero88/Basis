@@ -38,7 +38,7 @@ public sealed class BasisVideoMaterialOutput : MonoBehaviour
     [Tooltip("If true, the placeholder is rebound whenever the player raises OnEnded.")]
     public bool RestorePlaceholderOnEnded = true;
 
-    [Tooltip("Flip the video vertically. The native decoder already emits a Unity-correct (bottom-left origin) frame, so this defaults OFF. Toggle only if your content/platform arrives upside-down.")]
+    [Tooltip("Flip the video vertically. Per-GPU orientation differences are now corrected automatically (the backend reports its frame origin), so leave this OFF for normal content; enable it only if the source itself is encoded upside-down — which is consistent across all machines.")]
     public bool FlipVertically = false;
 
     [Tooltip("Flip the video horizontally. Use when the screen mesh's UV winding presents the video mirrored to the viewer.")]
@@ -198,8 +198,13 @@ public sealed class BasisVideoMaterialOutput : MonoBehaviour
         offset.x = originalOffset.x + originalScale.x * offset.x;
         offset.y = originalOffset.y + originalScale.y * offset.y;
 
-        if (FlipVertically && FlipHorizontally) BasisVideoOutputMath.ApplyBothFlip(ref scale, ref offset);
-        else if (FlipVertically) BasisVideoOutputMath.ApplyVerticalFlip(ref scale, ref offset);
+        // The backend may publish the frame upside-down on GPUs that can't
+        // normalize orientation natively (the Windows video-processor mirror is
+        // driver-optional); fold that per-client correction into the authored flip
+        // so one serialized FlipVertically value is correct on every machine.
+        bool flipV = FlipVertically ^ (Player != null && Player.OutputFrameIsTopLeftOrigin);
+        if (flipV && FlipHorizontally) BasisVideoOutputMath.ApplyBothFlip(ref scale, ref offset);
+        else if (flipV) BasisVideoOutputMath.ApplyVerticalFlip(ref scale, ref offset);
         else if (FlipHorizontally) BasisVideoOutputMath.ApplyHorizontalFlip(ref scale, ref offset);
 
         material.SetTextureScale(propertyId, scale);
