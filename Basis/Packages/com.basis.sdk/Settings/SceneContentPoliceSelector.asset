@@ -386,3 +386,19 @@ MonoBehaviour:
   - Basis.Shims.BasisInteractableShim
   - Basis.Shims.BasisOsc
   - UnityEngine.Video.VideoPlayer
+  - VRSL.URP.VRSL_URPLightManager
+  - VRSL.URP.VRSL_AudioLinkURPLightManager
+  - VRSL.URP.VRStageLighting_DMX_RealtimeLight
+  - VRSL.URP.VRStageLighting_DMX_Static
+  - VRSL.URP.VRStageLighting_AudioLink_RealtimeLight
+  - VRSL.URP.VRStageLighting_AudioLink_Static
+  - VRSL.URP.VRStageLighting_AudioLink_Laser
+  - VRSL.URP.VRSL_LocalUIControlPanel
+  - VRSL.URP.GridReader
+  - VRSL.EditorScripts.VRSL_CameraConfigurator
+  - SmoothingPanelOpener
+  - VRSL_AudioLink_SmoothingPanel
+  - pi.LTCGI.LTCGI_Controller
+  - pi.LTCGI.LTCGI_Screen
+  - LTCGI_UdonAdapter
+  - Basis.Integration.LTCGI.BasisLTCGIVideoAdapter

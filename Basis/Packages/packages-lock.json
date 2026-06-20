@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "at.pimaker.ltcgi": {
+      "version": "file:at.pimaker.ltcgi",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.avionblock.opussharp": {
       "version": "file:com.avionblock.opussharp",
       "depth": 0,
@@ -80,6 +86,12 @@
     },
     "com.basis.integration.audiolink": {
       "version": "file:com.basis.integration.audiolink",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.basis.integration.ltcgi": {
+      "version": "file:com.basis.integration.ltcgi",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
@@ -671,6 +683,15 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
+    },
+    "net.towneh.vrsl-urp": {
+      "version": "file:net.towneh.vrsl-urp",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.render-pipelines.universal": "17.0.0",
+        "com.llealloo.audiolink": "3.1.2"
+      }
     },
     "nuget.meamod.dns": {
       "version": "file:nuget.meamod.dns",
